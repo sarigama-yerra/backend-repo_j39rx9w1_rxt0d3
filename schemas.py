@@ -12,37 +12,37 @@ Model name is converted to lowercase for the collection name:
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Literal
 
-# Example schemas (replace with your own):
+# ----------------------
+# Core domain schemas
+# ----------------------
 
+class CartItem(BaseModel):
+    sku: str = Field(..., description="Unique SKU for product or license")
+    name: str = Field(..., description="Display name")
+    price: float = Field(..., ge=0, description="Unit price in USD")
+    quantity: int = Field(1, ge=1, le=99)
+    type: Literal['hardware', 'license'] = Field(...)
+    game_key: Optional[str] = Field(None, description="Game identifier for license items (e.g., csgo, overwatch, r6, vmp)")
+    billing_cycle: Literal['one-time', 'weekly', 'monthly'] = Field('one-time')
+
+class Cart(BaseModel):
+    items: List[CartItem] = Field(default_factory=list)
+    subtotal: float = 0.0
+    currency: str = 'USD'
+
+# Example additional schemas (unused directly but kept for reference)
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    name: str
+    email: str
+    address: str
+    age: Optional[int] = None
+    is_active: bool = True
 
 class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
-
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+    title: str
+    description: Optional[str] = None
+    price: float
+    category: str
+    in_stock: bool = True
