@@ -69,20 +69,19 @@ class AddItemRequest(BaseModel):
 def add_to_cart(payload: AddItemRequest):
     # Validate license flow: licenses require hardware in cart
     if payload.type == 'license':
-        # check if there is a hardware item already in an existing open cart (simple single-cart model)
         existing = db["cart"].find_one({"_status": "open"}) if db else None
         has_hardware = False
         if existing and any(item.get('type') == 'hardware' for item in existing.get('items', [])):
             has_hardware = True
-        if not has_hardware and payload.game_key != 'hardware':
-            # Allow adding hardware freely; block licenses if no hardware present
-            pass
+        if not has_hardware:
+            raise HTTPException(status_code=400, detail="Hardware required before adding licenses")
+
     item = CartItem(
         sku=payload.sku,
         name=payload.name,
         price=payload.price,
         quantity=max(1, payload.quantity),
-        type=payload.type, 
+        type=payload.type,
         game_key=payload.game_key,
         billing_cycle=payload.billing_cycle
     )
@@ -99,7 +98,6 @@ def add_to_cart(payload: AddItemRequest):
         if db is None:
             raise HTTPException(status_code=500, detail="Database not available")
         db["cart"].insert_one(cart_doc)
-        created = db["cart"].find_one({"_id": cart_doc.get("_id")})
         return Cart(**cart_doc)
     else:
         items = cart.get("items", [])
